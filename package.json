@@ -22,13 +22,17 @@
 			{
 				"command": "ntelli-aut.generateUnitTest",
 				"title": "Generate UNIT TEST"
+			},
+			{
+				"command": "ntelli-aut.generateUnitTestEdit",
+				"title": "Edit UNIT TEST"
 			}
 		],
 		"configuration": {
 			"type": "object",
 			"title": "NTELLI AUT",
 			"properties": {
-				"openai.api_Key": {
+				"openai.api_key": {
 					"type": "string",
 					"default": ""
 				},
