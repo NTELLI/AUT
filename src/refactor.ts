@@ -27,7 +27,7 @@ async function getRefactorSuggestion(): Promise<void> {
 		let selection = editor.selection;
 
 		//get filepath from the currently open file
-		const filePath = editor?.document.uri.fsPath;
+		const filePath = editor.document.uri.fsPath;
 		let fileExtension;
 		if (filePath) fileExtension = path.extname(filePath);
 
@@ -51,9 +51,25 @@ async function getRefactorSuggestion(): Promise<void> {
 				n: 1,
 			});
 
-			// Replace the highlighted text with the suggestions
-			// vscode.window.showInformationMessage(response.data?.choices?.[0]?.message?.content as string);
-			vscode.window.showInformationMessage(response.data?.choices?.[0]?.message?.content as string, { modal: true });
+			// Create a new webview panel
+			const view = vscode.window.createWebviewPanel(
+				'ntelli-aut.refactorTest.results',
+				'Refactor Test Results',
+				vscode.ViewColumn.One,
+				{
+					enableScripts: true,
+				}
+			);
+
+			// Assign the response to the webview panel's HTML content
+			view.webview.html = `
+				<!DOCTYPE html>
+				<html>
+					<body>
+						<p>${response.data?.choices?.[0]?.message?.content}</p>
+					</body>
+				</html>
+			`;
 		} catch (error: any) {
 			if (error.response.status === 401) {
 				vscode.window.showErrorMessage('The API key and organization ID are not correct or invalid.');
