@@ -3,6 +3,5 @@ import { generateUnitTest } from './generate';
 import { refactorTest } from './refactor';
 
 export function activate(context: vscode.ExtensionContext) {
-	context.subscriptions.push(generateUnitTest);
-	context.subscriptions.push(refactorTest);
+	context.subscriptions.push(generateUnitTest, refactorTest);
 }
