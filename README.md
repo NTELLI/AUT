@@ -16,6 +16,6 @@ Write **ncut** = NTELLI CREATE UNIT TEST
 
 Write **nrut** = NTELLU REFACTOR UNIT TEST
 
-# Settings
+## Settings
 
 Open up the extension's settings and fill in the API key and organization ID, that you will get from your openai account.
