@@ -1,13 +1,13 @@
 {
 	"name": "ntelli-aut",
 	"displayName": "NTELLI AUT",
-	"description": "automatic unit test generator",
-	"version": "0.0.1",
+	"description": "Automatically generate Jest unit test files and get code refactoring suggestions with our extension. Streamlined with chatGPT turbo 3.5, this extension makes the process of writing comprehensive test cases a breeze. Simply activate the extension on your active file and let it generate a test file for you. Highlight a section of code and get suggestions on how to refactor it. Never worry about writing lengthy test cases again.",
+	"version": "1.0.0",
 	"publisher": "NTELLI",
 	"icon": "images/NTELLI_AUT.png",
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/MadsHaerup/flaiir"
+		"url": "https://github.com/NTELLI/AUT"
 	},
 	"engines": {
 		"vscode": "^1.78.0"
@@ -20,12 +20,12 @@
 	"contributes": {
 		"commands": [
 			{
-				"command": "ntelli-aut.generateUnitTest",
-				"title": "Generate UNIT TEST"
+				"command": "ntelli-aut.refactorTest",
+				"title": "nrut"
 			},
 			{
-				"command": "ntelli-aut.generateUnitTestEdit",
-				"title": "Edit UNIT TEST"
+				"command": "ntelli-aut.createTest",
+				"title": "ncut"
 			}
 		],
 		"configuration": {
@@ -65,7 +65,6 @@
 	},
 	"dependencies": {
 		"axios": "^1.4.0",
-		"esbuild": "^0.17.19",
-		"openai": "^3.2.1"
+		"esbuild": "^0.17.19"
 	}
 }
