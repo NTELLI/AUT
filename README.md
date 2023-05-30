@@ -12,6 +12,6 @@ _Open command palette_
 
 CMD + shift + p
 
-Write **NCUT** = NTELLI CREATE UNIT TEST
+Write **ncut** = NTELLI CREATE UNIT TEST
 
-Write **NRUT** = NTELLU REFACTOR UNIT TEST
+Write **nrut** = NTELLU REFACTOR UNIT TEST
