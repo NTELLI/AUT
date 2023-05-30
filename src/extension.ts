@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
-import { generateUnitTest } from './generate';
 import { refactorTest } from './refactor';
+import { createTest } from './stream';
 
 export function activate(context: vscode.ExtensionContext) {
-	context.subscriptions.push(generateUnitTest, refactorTest);
+	context.subscriptions.push(refactorTest, createTest);
 }
