@@ -1,8 +1,9 @@
+import { TransformCallback } from 'stream';
 import * as vscode from 'vscode';
-import { Configuration, OpenAIApi } from 'openai';
-import * as path from 'path';
+import axios from 'axios';
 
 async function getRefactorSuggestion(): Promise<void> {
+	const streamNode = require('stream');
 	const vsconfig = vscode.workspace.getConfiguration();
 	let OPENAI_APIKEY = vsconfig.get('openai.api_key') as string;
 	let OPENAI_ORGANIZATIONID = vsconfig.get('openai.organization_ID') as string;
@@ -11,65 +12,103 @@ async function getRefactorSuggestion(): Promise<void> {
 		return;
 	}
 
-	// Set up the configuration object
-	const configuration = new Configuration({
-		organization: OPENAI_ORGANIZATIONID,
-		apiKey: OPENAI_APIKEY,
-	});
-
-	// Create the OpenAIApi object
-	const openai = new OpenAIApi(configuration);
-
 	// Get the current text editor
 	let editor = vscode.window.activeTextEditor;
 	if (editor) {
 		// Get the position of the last line of the highlighted text
 		let selection = editor.selection;
 
-		//get filepath from the currently open file
-		const filePath = editor.document.uri.fsPath;
-		let fileExtension;
-		if (filePath) fileExtension = path.extname(filePath);
-
 		// Modify the prompt to include the cursor position
 		const input = editor.document.getText(
 			new vscode.Range(selection.start.line + 0, 0, selection.end.line, selection.end.character)
 		);
-		// Get the code edit suggestions
+
+		const transformStream = new streamNode.Transform({
+			transform(chunk: Buffer | string, encoding: string | null, callback: TransformCallback) {
+				let transformedData = chunk.toString('utf-8');
+				transformedData = transformedData.replace(/\\n/g, '\n');
+				transformedData = transformedData.replace(/`/g, '');
+				transformedData = transformedData.replace(/\\t/g, '');
+
+				const regex = /"content":"([^"]*)"/;
+				const match = regex.exec(transformedData);
+
+				let content = match ? match[1] : '';
+
+				this.push(content);
+				callback();
+			},
+		});
 
 		try {
-			const response = await openai.createChatCompletion({
+			const url = 'https://api.openai.com/v1/chat/completions';
+			const headers = {
+				'Content-Type': 'application/json',
+				Authorization: `Bearer ${OPENAI_APIKEY ?? ''}`,
+			};
+			const payload = {
 				model: 'gpt-3.5-turbo',
 				messages: [
 					{
 						role: 'system',
-						content: 'You are an expert in refactoring jest unit tests.',
+						content:
+							'You are an expert in refactoring Jest unit tests. Come with your best opnion on how to refactor the provided input, with comments and code.',
 					},
 					{ role: 'user', content: input },
 				],
-				temperature: 0,
-				n: 1,
-			});
+				stream: true,
+			};
+			axios
+				.post(url, payload, {
+					headers: headers,
+					responseType: 'stream',
+				})
+				.then(response => {
+					const view = vscode.window.createWebviewPanel(
+						'ntelli-aut.refactorTest.results',
+						'Refactor Test Results',
+						vscode.ViewColumn.One,
+						{
+							enableScripts: true,
+						}
+					);
 
-			// Create a new webview panel
-			const view = vscode.window.createWebviewPanel(
-				'ntelli-aut.refactorTest.results',
-				'Refactor Test Results',
-				vscode.ViewColumn.One,
-				{
-					enableScripts: true,
-				}
-			);
+					let text = '';
+					response.data.pipe(transformStream).on('data', (chunk: any) => {
+						text += chunk;
+						if (view) {
+							view.webview.html = `
+							<!DOCTYPE html>
+							<html>
+								<head>
+									<style>
+										body {
+											color: #f2f2f2;
+											font-size: 16px;
+											line-height: 1.5;
+											padding: 20px;
+										}
+										p {
+											margin-bottom: 20px;
+										}
+									</style>
+								</head>
+							
+								<body>
+									<p>${text}</p>
+								</body>
+							</html>
+							`;
+						}
+					});
 
-			// Assign the response to the webview panel's HTML content
-			view.webview.html = `
-				<!DOCTYPE html>
-				<html>
-					<body>
-						<p>${response.data?.choices?.[0]?.message?.content}</p>
-					</body>
-				</html>
-			`;
+					response.data.on('end', () => {
+						vscode.window.showInformationMessage(`Refactor suggestion has been provided`);
+					});
+				})
+				.catch(error => {
+					console.error(error);
+				});
 		} catch (error: any) {
 			if (error.response.status === 401) {
 				vscode.window.showErrorMessage('The API key and organization ID are not correct or invalid.');
@@ -82,7 +121,7 @@ async function getRefactorSuggestion(): Promise<void> {
 	}
 }
 
-export const refactorTest = vscode.commands.registerCommand('ntelli-aut.generateUnitTestEdit', async () => {
+export const refactorTest = vscode.commands.registerCommand('ntelli-aut.refactorTest', async () => {
 	try {
 		await vscode.window.withProgress(
 			{
