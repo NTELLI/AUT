@@ -1,10 +1,11 @@
+import { TransformCallback } from 'stream';
 import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
 import axios from 'axios';
-const streamNode = require('stream');
 
 const stream = async (folderPath: string, fileName: string, prompt: string) => {
+	const streamNode = require('stream');
 	const vsconfig = vscode.workspace.getConfiguration();
 	let OPENAI_APIKEY = vsconfig.get('openai.api_key') as string;
 	let OPENAI_ORGANIZATIONID = vsconfig.get('openai.organization_ID') as string;
@@ -13,13 +14,38 @@ const stream = async (folderPath: string, fileName: string, prompt: string) => {
 		return;
 	}
 
-	const testFileName = `${fileName.split('.').slice(0, -1).join('.')}.test.ts`;
+	let testFileName = '';
+	if (fileName.includes('ts')) testFileName = `${fileName.split('.').slice(0, -1).join('.')}.test.ts`;
+	if (fileName.includes('tsx')) testFileName = `${fileName.split('.').slice(0, -1).join('.')}.test.tsx`;
+
 	const testFilePath = path.join(folderPath, testFileName);
 	fs.writeFileSync(testFilePath, '');
 
+	function commentTextBlocks() {
+		fs.readFile(testFilePath, 'utf8', (err, data) => {
+			if (err) {
+				console.error(err);
+				return;
+			}
+			const commentedBlock = data.replace(
+				// /(^[A-Z][\w\s,.;!?-]*[.:])|([^\n]*[.:][\s\n]*(?=[A-Z]|[0-9]|\(|\s*$))/gm,
+				/^[A-Z][^.\n]*[:.]\s*/gm,
+
+				match => {
+					if (data.indexOf(match) >= data.indexOf('`') && data.indexOf(match) <= data.lastIndexOf('`')) {
+						return match;
+					} else {
+						return `// ${match}`;
+					}
+				}
+			);
+
+			fs.writeFileSync(testFilePath, commentedBlock);
+		});
+	}
+
 	const transformStream = new streamNode.Transform({
-		transform(chunk: any, encoding: any, callback: any) {
-			// const transformedData = chunk.toString().toUpperCase();
+		transform(chunk: Buffer | string, encoding: string | null, callback: TransformCallback) {
 			let transformedData = chunk.toString('utf-8');
 			transformedData = transformedData.replace(/\\n/g, '\n');
 			transformedData = transformedData.replace(/`/g, '');
@@ -27,15 +53,14 @@ const stream = async (folderPath: string, fileName: string, prompt: string) => {
 			const regex = /"content":"([^"]*)"/;
 			const match = regex.exec(transformedData);
 
-			const content = match ? match[1] : '';
+			let content = match ? match[1] : '';
+
 			this.push(content);
-			// callback(null, transformedData);
 			callback();
 		},
 	});
 
 	try {
-		const writer = fs.createWriteStream(testFilePath);
 		const url = 'https://api.openai.com/v1/chat/completions';
 		const headers = {
 			'Content-Type': 'application/json',
@@ -47,7 +72,7 @@ const stream = async (folderPath: string, fileName: string, prompt: string) => {
 				{
 					role: 'system',
 					content:
-						'You are an expert in jest unit tests. Generate a jest unit test based on the input with 100% test coverage',
+						'You are an expert in Jest unit tests. Generate a Jest unit test based on the input with 100% test coverage. Do not use Enzyme, Mocha, Jasmine or any other javascript test framework in the tests.',
 				},
 				{ role: 'user', content: prompt },
 			],
@@ -64,8 +89,8 @@ const stream = async (folderPath: string, fileName: string, prompt: string) => {
 				});
 
 				response.data.on('end', () => {
+					commentTextBlocks();
 					vscode.window.showInformationMessage(`Unit test generated and saved at ${testFilePath}`);
-					writer.end();
 				});
 			})
 			.catch(error => {
@@ -80,7 +105,7 @@ const stream = async (folderPath: string, fileName: string, prompt: string) => {
 	}
 };
 
-export const UnitTest = vscode.commands.registerCommand('ntelli-aut.UnitTest', async () => {
+export const createTest = vscode.commands.registerCommand('ntelli-aut.createTest', async () => {
 	try {
 		const editor = vscode.window.activeTextEditor;
 		if (editor) {
