@@ -14,7 +14,7 @@ CMD + shift + p
 
 Write **ncut** = NTELLI CREATE UNIT TEST
 
-Write **nrut** = NTELLU REFACTOR UNIT TEST
+Write **nrut** = NTELLI REFACTOR UNIT TEST
 
 ## Settings
 
