@@ -15,8 +15,15 @@ const stream = async (folderPath: string, fileName: string, prompt: string) => {
 	}
 
 	let testFileName = '';
-	if (fileName.includes('ts')) testFileName = `${fileName.split('.').slice(0, -1).join('.')}.test.ts`;
-	if (fileName.includes('tsx')) testFileName = `${fileName.split('.').slice(0, -1).join('.')}.test.tsx`;
+	if (fileName.includes('ts')) {
+		testFileName = `${fileName.split('.').slice(0, -1).join('.')}.test.ts`;
+	}
+	if (fileName.includes('js')) {
+		testFileName = `${fileName.split('.').slice(0, -1).join('.')}.test.js`;
+	}
+	if (fileName.includes('tsx')) {
+		testFileName = `${fileName.split('.').slice(0, -1).join('.')}.test.tsx`;
+	}
 
 	const testFilePath = path.join(folderPath, testFileName);
 	fs.writeFileSync(testFilePath, '');
