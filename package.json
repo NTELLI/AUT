@@ -2,7 +2,7 @@
 	"name": "ntelli-aut",
 	"displayName": "NTELLI AUT",
 	"description": "Automatically generate Jest unit test files and get code refactoring suggestions with our extension. Streamlined with chatGPT turbo 3.5, this extension makes the process of writing comprehensive test cases a breeze. Simply activate the extension on your active file and let it generate a test file for you. Highlight a section of code and get suggestions on how to refactor it. Never worry about writing lengthy test cases again.",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"publisher": "NTELLI",
 	"icon": "images/NTELLI_AUT.png",
 	"repository": {
